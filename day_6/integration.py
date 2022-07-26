@@ -56,7 +56,7 @@ while current_time < tf-step_size :
     # Initialize Next Step
     current_time = next_time
     current_value = next_value
-    
+
 'Plot First Order Runge-Kutta solution'
 plt.plot(timeline, solution_rk1,'r-o',linewidth = 2)
 plt.legend(['Truth','Runge-Kutta 1'])
@@ -109,6 +109,7 @@ while current_time < tf-step_size :
     next_time = current_time + step_size
     timeline = np.append(timeline, next_time) 
     solution_rk4 = np.append(solution_rk4, next_value) 
+
     
     # Initialize Next Step
     current_time = next_time
@@ -118,3 +119,4 @@ while current_time < tf-step_size :
 plt.plot(timeline, solution_rk4,'g-o',linewidth = 2)
 plt.legend(['Truth','Runge-Kutta 1','Runge-Kutta 2','Runge-Kutta 4'])
 sys.exit()
+
