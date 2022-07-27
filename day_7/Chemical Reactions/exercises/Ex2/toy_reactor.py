@@ -11,6 +11,10 @@ import runge_kutta as rk
 #    S - numpy array carrying the stoichiometry matrix
 #    k - numpy array carrying the rate coefficients k1 = 100, k2=0.25, k3=1
 #    c_0 - initial composition, i.e., c_0(A) = 1, c_0(B)=c_0(C)=0.0
+S = np.array([[-1, 0, 0],[1, -1, 1],[0, 2, -2]])
+k = np.array([100.0, 0.25, 1.0]) 
+c_0 = np.array([1.0, 0, 0])
+
 
 def reaction_rates(c,k):
     """
@@ -23,7 +27,7 @@ def reaction_rates(c,k):
         outputs:
             reaction rates (numpy array)
     """
-    return ... # please complete this function
+    return np.array([k[0]*c[0], k[1]*c[1], k[2]*c[2]**2])
 
 def reactor(c,t,k,S):
     """
@@ -38,7 +42,7 @@ def reactor(c,t,k,S):
         outputs: 
             dc/dt - numpy array
     """
-    return ... # please complete this function
+    return S @ reaction_rates(c,k) # @ means matrix multiplication
 
 # Please play around with the step size to study the effect on the solution
 h = 1e-3

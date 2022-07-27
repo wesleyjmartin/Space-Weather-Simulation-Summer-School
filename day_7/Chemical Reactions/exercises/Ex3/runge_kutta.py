@@ -57,7 +57,7 @@ def integrate(f, x0, tspan, h, step):
         ts.append(t)
     return trajectory, ts
 
-def adaptive_explicit_RK_stepper(x,t,f,h,a,b,c,b_control):
+def adaptive_explicit_RK_stepper(f,x,t,h,a,b,c,b_control):
     """
         Implementation of generic explicit Runge-Kutta update for explicit ODEs
         
@@ -69,13 +69,22 @@ def adaptive_explicit_RK_stepper(x,t,f,h,a,b,c,b_control):
             a - coefficients of Runge-Kutta method (organized as list-of-list (or vector-of-vector))
             b - weights of Runge-Kutta method (list/vector)
             c - nodes of Runge-Kutta method (including 0 as first node) (list/vector)
-            b - weights of control Runge-Kutta method (list/vector)
+            b_control - weights of control Runge-Kutta method (list/vector)
 
         outputs: 
             x_new - estimate of state at time t + h
             error - estimate of the accuracy
     """
-    return ... # please complete this function 
+    s = len(c)
+    ks = [f(x,t)]
+    x_new = x + h*b[0]*ks[0]
+    error = h*(b[0] - b_control[0])*ks[0]
+    for i in range(s-1):
+        y = x + h*sum(a[i][j]*ks[j] for j in range(i+1))
+        ks.append(f(y, t+h*c[i+1]))
+        x_new += h*b[i+1]*ks[-1]
+        error += h*(b[i+1] - b_control[i+1])*ks[-1]
+    return x_new, norm(error)
                # hint: 
                # It should be a rather simple adaptation of 
                # explicit_RK_stepper
@@ -106,7 +115,25 @@ def adaptive_integrate(f, x0, tspan, h, step, rtol = 1e-8, atol = 1e-8):
             ts - time points visited during integration (list)
             xs - trajectory of the system (list of numpy arrays)
     """
-    return ... # please complete this function 
+    t, tf = tspan # initialize time & end of time horizon 
+    x = x0 # initialize step 
+    trajectory = [x]
+    ts = [t]
+    while t < tf: 
+        h_eff = min(h, tf-t)
+        x_hat, error = step(f,t,x,h)
+        if error <= norm(x)*rtol + atol:
+            # accept the step and double step size
+            t += h
+            x = x_hat
+            trajectory.append(x)
+            ts.append(t)
+            h *= 2
+        else: 
+            # reject step and half step size
+            h /= 2 
+            
+    return  trajectory, ts # please complete this function 
                # Hint 1: The slide contain pseudo code that should be a good 
                #         starting ground!
                # Hint 2: use the condition error > rtol*norm(x) + atol
