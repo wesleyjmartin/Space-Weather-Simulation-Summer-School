@@ -1,177 +1,101 @@
 
+# -*- coding: utf-8 -*-
 """
-Created on Wed Jul 20 15:14:41 2022
-
-@author: Simone Servadio
+This file teaches first order numerical differentiation using finite difference methods
 """
 
-"""This file teaches first order numerical differentiation using 
-finite difference methods"""
-
-"Auxiliarly functions"
-
-import sys
-import numpy as np
+"Auxiliary functions"
+import sys 
+import numpy as np 
 import matplotlib.pyplot as plt
 
-def func(x):
-    """generic function"""
-    return np.cos(x)+x*np.sin(x)
+def xfunc(x) :
+    """Toy function for demonstrating the finite difference methods"""
+    return np.cos(x) + x*np.sin(x) 
 
-def func_dot(x):
-    """Derivative of the generic function"""
+def xfunc_dot(x):
+    """Derivative of example function"""
     return x*np.cos(x)
 
 
 
-"Dispaly function and its derivative"
-n_points = 1000     # number of points
-x_in = -6           # start 
-x_fin = -x_in       # symmetric domain
-x = np.linspace(x_in,x_fin,n_points) # independent variable
-y = func(x) #dependent variable
-y_dot = func_dot(x) # derivative
+"Display function and its derivative" 
+points = 1000 # number of points
+x_min = -6      # x range
+x_max = -x_min  # ^^
+x = np.linspace(x_min, x_max, points) # independent variable 
+y = xfunc(x) # dependent variable 
+y_dot = xfunc_dot(x) # derivative 
 
-fig1 = plt.figure()
+fig1 = plt.figure() 
 plt.plot(x,y,'-r')
-plt.plot(x,y_dot,'b-')
+plt.plot(x,y_dot,'-b')
 plt.grid()
-plt.xlabel('x',fontsize = 16)
-plt.legend([r'$y$',r'$\dot y$'],fontsize=16)
-#sys.exit() #exit form the script
+plt.xlabel('x', fontsize = 16)
+plt.legend(['$y$','$\dot y$'],fontsize=16)
+
+# sys.exit() # exit from the script 
 
 
+"Forward finite difference"
 
+step_size = 0.25 # step size
+y_dot_forw = np.array([]) # initialize solution array
+x_forw = np.array([]) # initialize step points
+x0 = x_min           # initialize first point
 
-
-
-
-
-
-
-"FINITE DIFFERENCE"
-step_size = 0.25  #define interval step for differentiation
-
-fig2 = plt.figure() #plot the correct solution 
-plt.plot(x,y_dot,'-k')
+# loop through the whole range of x
+while x0 <= x_max:
+    y_approx = (xfunc(x0 + step_size) - xfunc(x0))/step_size # approximate the derivative (positive)
+    y_dot_forw = np.append(y_dot_forw, y_approx) # append value onto solution array
+    x_forw = np.append(x_forw, x0) 
+    x0 += step_size 
+    
+fig2 = plt.figure()
+plt.plot(x,y_dot,'-r')
+plt.plot(x_forw,y_dot_forw,'-b')
 plt.grid()
 plt.xlabel(r'$x$')
 plt.ylabel(r'$\dot y$')
-plt.legend([r'$\dot y$ truth'])
+plt.legend([r'$\dot y$ true', r'$\dot y$ forward'])
+# sys.exit()
 
-"Forward Finite Difference"
-x0 = x_in                      # initialize first point
-y_dot_forw = np.array([])      # initialize solution array 
-x_forw = np.array([x_in])      # initialize step points
 
-while x0 <= x_fin:
-    current_value = func(x0)                              #f_k
-    following_value = func(x0+step_size)                  #f_k+1
-    slope = (following_value-current_value)/step_size     #(f_k+1 - f_k)/h
-    x0 = x0 + step_size           
-    x_forw = np.append(x_forw, x0)
-    y_dot_forw = np.append(y_dot_forw, slope)
+
+"Backward finite difference"
+
+y_dot_back = np.array([]) # initialize solution array
+x_back = np.array([]) # initialize step points
+x0 = x_min           # initialize first point
+
+# loop through the whole range of x
+while x0 <= x_max:
+    y_approx = (xfunc(x0) - xfunc(x0 - step_size))/step_size # approximate the derivative (negative)
+    y_dot_back = np.append(y_dot_back, y_approx) # append value onto solution array
+    x_back = np.append(x_back, x0) 
+    x0 += step_size 
     
+
+plt.plot(x_forw,y_dot_back,'-g')
+plt.legend([r'$\dot y$ true', r'$\dot y$ forward', r'$\dot y$ backward'])
+# sys.exit()
+
+
+
+"Central finite difference"
+
+y_dot_cent = np.array([]) # initialize solution array
+x_cent = np.array([]) # initialize step points
+x0 = x_min           # initialize first point
+
+# loop through the whole range of x
+while x0 <= x_max:
+    y_approx = (xfunc(x0 + step_size) - xfunc(x0 - step_size))/(2*step_size) # approximate the derivative (central)
+    y_dot_cent = np.append(y_dot_cent, y_approx) # append value onto solution array
+    x_cent = np.append(x_cent, x0) 
+    x0 += step_size 
     
-plt.plot(x_forw[:-1],y_dot_forw,'-r')
-plt.legend([r'$\dot y$ truth',r'$\dot y$ forward'])
-#sys.exit()
 
-
-
-
-
-
-
-
-
-"Backward Finite Difference"
-x0 = x_in                      # initialize first point
-y_dot_back = np.array([])      # initialize solution array 
-x_back = np.array([x_in])      # initialize step points
-
-while x0 <= x_fin:
-    current_value = func(x0)                              #f_k
-    previous_value = func(x0-step_size)                   #f_k-1
-    slope = (current_value-previous_value)/step_size      #(f_k - f_k-1)/h
-    x0 = x0 + step_size
-    x_back = np.append(x_back, x0)
-    y_dot_back = np.append(y_dot_back, slope)
-    
-    
-plt.plot(x_back[:-1],y_dot_back,'-b')
-plt.legend([r'$\dot y$ truth',r'$\dot y$ forward',r'$\dot y$ backward'])
-#sys.exit()
-
-
-
-
-
-
-
-
-
-"Central Finite Difference"
-x0 = x_in                      # initialize first point
-y_dot_cent= np.array([])       # initialize solution array 
-x_cent = np.array([x_in])      # initialize step points
-
-while x0 <= x_fin:
-    following_value = func(x0+step_size)                  #f_k+1
-    previous_value = func(x0-step_size)                   #f_k-1
-    slope = (following_value-previous_value)/step_size/2  #(f_k+1 - f_k-1)/2h
-    x0 = x0 + step_size
-    x_cent = np.append(x_cent, x0)
-    y_dot_cent = np.append(y_dot_cent, slope)
-    
-    
-plt.plot(x_cent[:-1],y_dot_cent,'-g')
-plt.legend([r'$\dot y$ truth',r'$\dot y$ forward',
-            r'$\dot y$ backward',r'$\dot y$ central'])
+plt.plot(x_cent,y_dot_cent,'-k')
+plt.legend([r'$\dot y$ true', r'$\dot y$ forward', r'$\dot y$ backward', r'$\dot y$ central'])
 sys.exit()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

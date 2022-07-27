@@ -1,167 +1,122 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Wed Jul 20 16:31:23 2022
+Created on Mon Jul 25 15:09:22 2022
 
-@author: Simone Servadio
+@author: wesle
+
+This file teaches first order numerical integration of ODEs using the Euler method
 """
 
-"""This file teaches numerical propagation using 
-finite difference methods, in particular fixed step integration up to order 4"""
-
-
-"Auxiliarly functions"
-#%matplotlib qt
-import sys
-import numpy as np
+"Auxiliary functions"
+import sys 
+import numpy as np 
 import matplotlib.pyplot as plt
-from scipy.integrate import odeint 
+from scipy.integrate import odeint
 
-def RHS(x, t):
-    """ODE Right hand side"""
-    return -2*x
+def RHS(y, t):
+    """Right hand side of the ODE dy(t)/dt = -2y(t)"""
+    return -2*y
 
+"Set up the problem" 
+y0 = 3 # initial condition 
+t0 = 0 # initial time 
+tf = 2 # final time 
 
-"Set the problem"
-y0 = 3 # initial condition
-t0 = 0 # initial time
-tf = 2 # final time
-
-"Evaluate exact solution"
-time = np.linspace(t0,tf) # time spanned
-y_true = odeint(RHS,y0,time) # solution
+"Evaluate exact solution" 
+time = np.linspace(t0,tf) # time spanned 
+y_true = odeint(RHS,y0,time) # solution 
 
 fig1 = plt.figure()
+'Plot exact solution'
 plt.plot(time,y_true,'k-',linewidth = 2)
 plt.grid()
 plt.xlabel('time')
 plt.ylabel(r'$y(t)$')
 plt.legend(['Truth'])
-#sys.exit()
+# sys.exit()
 
-"Numerical integration"
-step_size = 0.2 #value of the fixed step size
+"Numerical integration" 
+step_size = 0.2 # value of the fixed step size 
 
-"First Order Runge-Kutta or Euler Method"
-current_time = t0
-timeline = np.array([t0])
-current_value = y0
-sol_rk1 = np.array([y0])
+"First Order Runge-Kutta or Euler Method" 
+current_time = t0 # initialize first timestep 
+timeline = np.array([t0]) # initialize timestep points 
+current_value = y0 # initialize first value
+solution_rk1 = np.array([y0]) # initialize solution array
 
-while current_time < tf-step_size:
-    
+while current_time < tf-step_size :
     # Solve ODE
-    slope = RHS(current_value, current_time)
-    next_value = current_value + slope * step_size
+    next_value = current_value + step_size*RHS(current_value, current_time) 
     
-    # Save Solution
+    # Save Solution 
     next_time = current_time + step_size
-    timeline = np.append(timeline, next_time)
-    sol_rk1 = np.append(sol_rk1, next_value)
+    timeline = np.append(timeline, next_time) 
+    solution_rk1 = np.append(solution_rk1, next_value) 
     
     # Initialize Next Step
     current_time = next_time
     current_value = next_value
-    
-plt.plot(timeline,sol_rk1,'r-o',linewidth = 2)
+
+'Plot First Order Runge-Kutta solution'
+plt.plot(timeline, solution_rk1,'r-o',linewidth = 2)
 plt.legend(['Truth','Runge-Kutta 1'])
-#sys.exit()
+# sys.exit()
 
 
 
+"Second Order Runge-Kutta" 
+current_time = t0 # initialize first timestep 
+timeline = np.array([t0]) # initialize timestep points 
+current_value = y0 # initialize first value
+solution_rk2 = np.array([y0]) # initialize solution array
 
-
-
-
-
-
-"Second Order Runge-Kutta"
-current_time = t0
-timeline = np.array([t0])
-current_value = y0
-sol_rk2 = np.array([y0])
-
-while current_time < tf-step_size:
-    
+while current_time < tf-step_size :
     # Solve ODE
-    k1 = RHS(current_value, current_time)
-    k2 = RHS(current_value + k1*step_size/2, current_time + step_size/2)
-    next_value = current_value + k2 * step_size
+    offset_value = current_value + step_size*RHS(current_value, current_time)/2
+    offset_time = current_time + step_size/2
+    next_value = current_value + step_size*RHS(offset_value, offset_time) 
     
-    # Save Solution
+    # Save Solution 
     next_time = current_time + step_size
-    timeline = np.append(timeline, next_time)
-    sol_rk2 = np.append(sol_rk2, next_value)
+    timeline = np.append(timeline, next_time) 
+    solution_rk2 = np.append(solution_rk2, next_value) 
     
     # Initialize Next Step
     current_time = next_time
     current_value = next_value
     
-plt.plot(timeline,sol_rk2,'b-o',linewidth = 2)
+'Plot Second Order Runge-Kutta solution'
+plt.plot(timeline, solution_rk2,'b-o',linewidth = 2)
 plt.legend(['Truth','Runge-Kutta 1','Runge-Kutta 2'])
-#sys.exit()
+# sys.exit()
 
+"Fourth Order Runge-Kutta" 
+current_time = t0 # initialize first timestep 
+timeline = np.array([t0]) # initialize timestep points 
+current_value = y0 # initialize first value
+solution_rk4 = np.array([y0]) # initialize solution array
 
-
-
-
-
-
-
-
-"Fourth Order Runge-Kutta"
-current_time = t0
-timeline = np.array([t0])
-current_value = y0
-sol_rk4 = np.array([y0])
-
-while current_time < tf-step_size:
-    
+while current_time < tf-step_size :
     # Solve ODE
     k1 = RHS(current_value, current_time)
     k2 = RHS(current_value + k1*step_size/2, current_time + step_size/2)
     k3 = RHS(current_value + k2*step_size/2, current_time + step_size/2)
     k4 = RHS(current_value + k3*step_size, current_time + step_size)
-    next_value = current_value + (k1+2*k2+2*k3+k4) * step_size/6
+    m = (k1 + 2*k2 + 2*k3 + k4)/6 # weighted average slope approximation
+    next_value = current_value + m*step_size
     
-    # Save Solution
+    # Save Solution 
     next_time = current_time + step_size
-    timeline = np.append(timeline, next_time)
-    sol_rk4 = np.append(sol_rk4, next_value)
+    timeline = np.append(timeline, next_time) 
+    solution_rk4 = np.append(solution_rk4, next_value) 
+
     
     # Initialize Next Step
     current_time = next_time
     current_value = next_value
     
-plt.plot(timeline,sol_rk4,'g-o',linewidth = 2)
+'Plot Fourth Order Runge-Kutta solution'
+plt.plot(timeline, solution_rk4,'g-o',linewidth = 2)
 plt.legend(['Truth','Runge-Kutta 1','Runge-Kutta 2','Runge-Kutta 4'])
 sys.exit()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 

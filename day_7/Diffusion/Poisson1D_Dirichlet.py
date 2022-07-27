@@ -9,7 +9,7 @@ Analytical solution: -x*(x-1)*exp(x)
 
 Finite differences (FD) discretization: second-order diffusion operator
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 Change boundary conditions
 
 """
