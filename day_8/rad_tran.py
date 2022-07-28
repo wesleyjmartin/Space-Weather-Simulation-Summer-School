@@ -68,6 +68,10 @@ if __name__ == '__main__':  # main code block
     # compute scale height in km (step 4):
     h_o = calc_scale_height(mass_o, alts, temp)
     print('Scale height of o : ', h_o)
+    h_o2 = calc_scale_height(mass_o2, alts, temp)
+    print('Scale height of o2 : ', h_o2)
+    h_n2 = calc_scale_height(mass_n2, alts, temp)
+    print('Scale height of n2 : ', h_n2)
 
     # calculate euvac (step 5):
     intensity_at_inf = EUVAC(euv_info['f74113'], euv_info['afac'], f107, f107a)
@@ -83,19 +87,25 @@ if __name__ == '__main__':  # main code block
 
     # Calculate the density of O as a function of alt and temp (step 6):
     density_o = calc_hydrostatic(n_o_bc, h_o, temp, alts)
-    # Need to calculate the densities of N2 and O2...
+    density_o2 = calc_hydrostatic(n_o2_bc, h_o2, temp, alts)
+    density_n2 = calc_hydrostatic(n_n2_bc, h_n2, temp, alts)
+    
     
     # plot out to a file:
     plot_value_vs_alt(alts, density_o, 'o_init.png', '[O] (/m3)', is_log = True)
+    plot_value_vs_alt(alts, density_o2, 'o2_init.png', '[O2] (/m3)', is_log = True)
+    plot_value_vs_alt(alts, density_n2, 'n2_init.png', '[N2] (/m3)', is_log = True)
 
     # Calculate Taus for O (Step 7):
     tau_o = calc_tau(SZA, density_o, h_o, euv_info['ocross'])
-    # Need to calculate tau for N2 and O2, and add together...
-    # and do this for all of the wavelengths...
-    tau = tau_o # + ...
+    tau_o2 = calc_tau(SZA, density_o2, h_o2, euv_info['o2cross'])
+    tau_n2 = calc_tau(SZA, density_n2, h_n2, euv_info['n2cross'])
+    tau = tau_o + tau_o2 + tau_n2 
     
     # plot Tau to file:
-    plot_value_vs_alt(alts, tau_o[5], 'tau_o.png', 'tau ()')
+    for i in range(37):
+        plot_value_vs_alt(alts, tau[i], 'tau_'+str(i)+'.png', 'tau ()')
+    # plot_value_vs_alt(alts, tau[5], 'tau_'+str(5)+'.png', 'tau ()')
 
     Qeuv_o = calculate_Qeuv(density_o,
                             intensity_at_inf,
@@ -103,14 +113,28 @@ if __name__ == '__main__':  # main code block
                             euv_info['ocross'],
                             energies,
                             efficiency)
+    
+    Qeuv_o2 = calculate_Qeuv(density_o2,
+                            intensity_at_inf,
+                            tau,
+                            euv_info['o2cross'],
+                            energies,
+                            efficiency)
+    
+    Qeuv_n2 = calculate_Qeuv(density_n2,
+                            intensity_at_inf,
+                            tau,
+                            euv_info['n2cross'],
+                            energies,
+                            efficiency)
 
-    Qeuv = Qeuv_o # + ...
+    Qeuv = Qeuv_o + Qeuv_o2 + Qeuv_n2 
 
     # plot out to a file:
-    plot_value_vs_alt(alts, Qeuv_o, 'o_qeuv.png', 'Qeuv - O (W/m3)')
+    plot_value_vs_alt(alts, Qeuv, 'qeuv.png', 'Qeuv (W/m3)')
     
     # alter this to calculate the real mass density (include N2 and O2):
-    rho = calc_rho(density_o, mass_o)
+    rho = calc_rho(density_o, mass_o, density_o2, mass_o2, density_n2, mass_n2)
 
     # this provides cp, which could be made to be a function of density ratios:
     cp = calculate_cp()

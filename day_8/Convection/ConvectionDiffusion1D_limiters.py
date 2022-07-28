@@ -36,7 +36,7 @@ Dx = 1/N
 x = np.linspace(0,1,N+1)
 
 "Time parameters"
-dt = 0.1
+dt = 1/50
 time = np.arange(0,3+dt,dt)
 nt = np.size(time)
 

@@ -1,3 +1,10 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Wed Jul 27 18:07:57 2022
+
+@author: wesle
+"""
+
 #!/usr/bin/env python
 """
 Advection of a pollutant subject to a constant velocity
@@ -18,9 +25,6 @@ Tasks:
     - See what happens as we change viscosity
     
 """
-__author__ = 'Jordi Vila-Pérez'
-__email__ = 'jvilap@mit.edu'
-
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -34,82 +38,65 @@ nu = 0
 c = -2
 u0 = 0
 
-"Scheme parameters"
-beta = 1
-
 "Number of points"
 N = 32
 Dx = 1/N
 x = np.linspace(0,1,N+1)
-xN = np.concatenate(([x[0]-Dx],x))
+xN = np.concatenate((x,[x[-1]+Dx]))
 
+"Solver parameters"
+order = 2
 
 "Time parameters"
-dt = 1/50
+dt = 1/10
 time = np.arange(0,3+dt,dt)
 nt = np.size(time)
 
 "Initialize solution var`iable"
-U = np.zeros((N+1,nt))
+U = np.zeros((N+2,nt))
 
 
 for it in range(nt-1):
 
     "System matrix and RHS term"
     "Diffusion term"
-    Diff = nu*(1/Dx**2)*(2*np.diag(np.ones(N+1)) - np.diag(np.ones(N),-1) - np.diag(np.ones(N),1))
+    Diff = nu*(1/Dx**2)*(2*np.diag(np.ones(N+2)) - np.diag(np.ones(N+1),-1) - np.diag(np.ones(N+1),1))
 
     "Advection term:"
         
-    "Sensor"
+    "Previous U"
     U0 = U[:,it]
-    uaux = np.concatenate(([U0[0]], U0,[U0[N]]))
-    Du = uaux[1:N+3] - uaux[0:N+2] + 1e-8
-    r = Du[0:N+1]/Du[1:N+2]
-    
-    "Limiter"
-    if beta>0:
-        phi = np.minimum(np.minimum(beta*r,1),np.minimum(r,beta))
-        phi = np.maximum(0,phi)
-    else:
-        phi = 2*r/(r**2 + 1)
-        
-    phim = phi[0:N]
-    phip = phi[1:N+1]
-        
     
     "Upwind scheme"
     cp = np.max([c,0])
     cm = np.min([c,0])
-    
-    Advp = cp*(np.diag(1-phi) - np.diag(1-phip,-1))
-    Advm = cm*(np.diag(1-phi) - np.diag(1-phim,1))
-    Alow = Advp-Advm
-    
-    "Centered differences"
-    Advp = -0.5*c*np.diag(phip,-1)
-    Advm = -0.5*c*np.diag(phim,1)
-    Ahigh = Advp-Advm
+    if order<2:
+        "First-order upwind"
+        Advp = cp*(np.diag(np.ones(N+2)) - np.diag(np.ones(N+1),-1))
+        Advm = cm*(np.diag(np.ones(N+2)) - np.diag(np.ones(N+1),1))
+    else:
+        Advp = cp*(1.5*np.diag(np.ones(N+2)) - 2*np.diag(np.ones(N+1),-1) + 0.5*np.diag(np.ones(N),-2))
+        Advm = cm*(1.5*np.diag(np.ones(N+2)) - 2*np.diag(np.ones(N+1),1) + 0.5*np.diag(np.ones(N),2))
         
-    Adv = (1/Dx)*(Ahigh + Alow)
+    Adv = (1/Dx)*(Advp-Advm)
     A = Diff + Adv
     
     "Source term"
     sine = np.sin(2*pi*time[it+1])
     sineplus = 0.5*(sine + np.abs(sine))
-    F = 100*np.exp(-((x-0.8)/0.01)**2)*sineplus
+    F = 100*np.exp(-((xN-0.8)/0.01)**2)*sineplus
     
     "Temporal terms"
-    A = A + (1/dt)*np.diag(np.ones(N+1))
+    A = A + (1/dt)*np.diag(np.ones(N+2))
     F = F + U0/dt
 
     "Boundary condition at x=0"
-    A[0,:] = (1/Dx)*np.concatenate(([1.5, -2, 0.5],np.zeros(N-2)))
+    A[0,:] = (1/Dx)*np.concatenate(([1.5, -2, 0.5],np.zeros(N-1)))
     F[0] = 0
 
     "Boundary condition at x=1"
-    A[N,:] = np.concatenate((np.zeros(N),[1]))
-    F[N] = u0
+    A[N+1,:] = (1/Dx**2)*np.concatenate((np.zeros(N-1),[1, -2, 1]))
+    F[N+1] = u0
 
 
     "Solution of the linear system AU=F"
@@ -128,9 +115,9 @@ plt.ylabel("u",fontsize=16)
 
 def animate(i):
     
-    u = U[0:N+1,i]
-    plt.plot(x,u)
-    myAnimation.set_data(x, u)
+    u = U[0:N+2,i]
+    plt.plot(xN,u)
+    myAnimation.set_data(xN, u)
     return myAnimation,
 
 anim = animation.FuncAnimation(fig,animate,frames=range(1,nt),blit=True,repeat=False)
