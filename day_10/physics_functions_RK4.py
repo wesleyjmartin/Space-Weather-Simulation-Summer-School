@@ -86,11 +86,11 @@ def convert_wavelength_to_joules(wavelength):
 #  - cross sections in /m2
 #-----------------------------------------------------------------------------
 
-def calc_tau(SZA_in_deg, density_in_m3, scale_height_in_km, cross_section):
+def calc_tau_complete(SZA_in_deg, density_in_m3, scale_height_in_km, cross_section):
 
     # We are only going to do this for a single wavelength for now!
 
-
+    cs = cross_section[0]
 
     # convert scale height to m:
     h = scale_height_in_km * 1000.0
@@ -103,6 +103,7 @@ def calc_tau(SZA_in_deg, density_in_m3, scale_height_in_km, cross_section):
 
     nWaves = len(cross_section)
     nAlts = len(density_in_m3)
+    # nAlts = 1
     tau = np.zeros((nWaves, nAlts))
 
     # calculate Tau:
@@ -121,12 +122,12 @@ def calc_tau(SZA_in_deg, density_in_m3, scale_height_in_km, cross_section):
 #  - efficiency of the heating (say 30%)
 #-----------------------------------------------------------------------------
 
-def calculate_Qeuv(density_in_m3,
-                   intensity_inf,
-                   tau,
-                   cross_section,
-                   energies,
-                   efficiency):
+def calculate_Qeuv_complete(density_in_m3,
+                            intensity_inf,
+                            tau,
+                            cross_section,
+                            energies,
+                            efficiency):
 
     nAlts = len(density_in_m3)
     nWaves = len(intensity_inf)
@@ -149,8 +150,8 @@ def calculate_Qeuv(density_in_m3,
 # calculate rho given densities of O (and N2 and O2)
 #-----------------------------------------------------------------------------
 
-def calc_rho(density_o, mass_o, density_o2, mass_o2, density_n2, mass_n2):
-    rho = (density_o * mass_o + density_o2 * mass_o2 + density_n2 * mass_n2) * cAMU_ 
+def calc_rho(density_o, mass_o):
+    rho = density_o * mass_o * cAMU_
     return rho
 
 #-----------------------------------------------------------------------------
@@ -166,7 +167,60 @@ def calculate_cp():
 # calculate dT/dt from Q and rho:
 #-----------------------------------------------------------------------------
 
-def convert_Q_to_dTdt(Qeuv, rho, cp):
+def convert_Q_to_dTdt(Qeuv, time, rho, cp):
     dTdt = Qeuv / (rho * cp)
     return dTdt
 
+#-----------------------------------------------------------------------------
+# Calculate the real rho (ignore!!!)
+#-----------------------------------------------------------------------------
+
+def calc_rho_complete(density_o, mass_o,
+                      density_o2, mass_o2,
+                      density_n2, mass_n2):
+    rho = density_o * mass_o * cAMU_
+    rho += density_o2 * mass_o2 * cAMU_
+    rho += density_n2 * mass_n2 * cAMU_
+    return rho
+
+#-----------------------------------------------------------------------------
+# right hand side but it's in a form that RK4 can accept
+#-----------------------------------------------------------------------------
+
+# def RHS(y, t):
+#     return convert_Q_to_dTdt(y, y[1], 1500)
+
+#-----------------------------------------------------------------------------
+# calculate RK4 of a given function
+#-----------------------------------------------------------------------------
+
+def RK4_single_step(func, y, t, h):
+    """Explicit Integrator Runge-Kutta Order 4"""
+    # # n = len(t)
+    # y = np.zeros((n, len(y0)))
+    # # y = np.zeros(n)
+    # # print(y0)
+    # y[0] = y0
+    k1 = func(y, t)
+    k2 = func(y + k1 * h / 2., t + h / 2)
+    k3 = func(y + k2 * h / 2., t + h / 2)
+    k4 = func(y + k3 * h, t + h)
+    y_next = y + (h / 6) * (k1 + 2*k2 + 2*k3 + k4)
+    return y_next
+
+def RK4(func, y0, t):
+    """Explicit Integrator Runge-Kutta Order 4"""
+    # n = len(t)
+    n = 1
+    y = np.zeros((n, len(y0)))
+    # y = np.zeros(n)
+    # print(y0)
+    y[0] = y0
+    for i in range(n - 1):
+        h = t[i+1] - t[i] #time - step
+        k1 = func(y[i], t[i])
+        k2 = func(y[i] + k1 * h / 2., t[i] + h / 2)
+        k3 = func(y[i] + k2 * h / 2., t[i] + h / 2)
+        k4 = func(y[i] + k3 * h, t[i] + h)
+        y[i+1] = y[i] + (h / 6) * (k1 + 2*k2 + 2*k3 + k4)
+    return y
